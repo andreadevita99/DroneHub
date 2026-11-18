@@ -1,0 +1,2027 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DroneHubLog Pro | Registro Voli UAS, Flotta DJI, Batterie &amp;
+    Manutenzione</title>
+  <meta name="description"
+    content="Gestionale professionale per piloti UAS. Registro voli conforme EASA/ENAC, catalogo completo flotta DJI, registro cicli batterie, grafici interattivi e stampa PDF ufficiale.">
+  <meta name="author" content="AeroTech Pro Solutions S.r.l.">
+
+  <!-- Favicon & Touch Icons -->
+  <link rel="icon" type="image/png"
+    href="https://raw.githubusercontent.com/andreadevita99/DroneHub/main/favicon.png">
+  <link rel="apple-touch-icon"
+    href="https://raw.githubusercontent.com/andreadevita99/DroneHub/main/favicon.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script
+    src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eff6ff', 500: '#3b82f6', 600: '#2563eb' },
+            tech: { card: '#0f172a', border: '#1e293b', accent: '#06b6d4', amber: '#f59e0b', emerald: '#10b981' }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0b0f19;
+      color: #f1f5f9;
+    }
+
+    .font-mono-num {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .modal-backdrop {
+      background: rgba(5, 8, 18, 0.85);
+      backdrop-filter: blur(8px);
+    }
+
+    /* STAMPA UFFICIALE LOGBOOK ENAC / EASA */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 8mm;
+      }
+
+      body {
+        background: #fff !important;
+        color: #000 !important;
+      }
+
+      header,
+      footer,
+      #kpi-strip,
+      #chart-card,
+      #section-batteries,
+      #section-maint,
+      #section-pilot,
+      #checklist-box,
+      .no-print,
+      button,
+      input,
+      select {
+        display: none !important;
+      }
+
+      #section-flights {
+        display: block !important;
+        margin: 0 !important;
+      }
+
+      #enac-print-header,
+      #enac-print-footer {
+        display: block !important;
+      }
+
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+
+      th,
+      td {
+        border: 1px solid #334155 !important;
+        padding: 6px !important;
+        color: #000 !important;
+        font-size: 8pt !important;
+      }
+
+      th {
+        background-color: #f1f5f9 !important;
+        font-weight: bold;
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col antialiased">
+
+  <!-- INTESTAZIONE STAMPA ENAC -->
+  <div class="hidden pb-4 mb-3 border-b-2 border-slate-900"
+    id="enac-print-header">
+    <div
+      class="flex justify-between items-start border-b-2 border-slate-900 pb-3">
+      <div class="flex items-center gap-4">
+        <div
+          class="w-16 h-16 border-2 border-slate-900 flex flex-col items-center justify-center p-1 bg-white shrink-0 text-center">
+          <svg class="w-10 h-10 text-slate-900" viewBox="0 0 24 24"
+            fill="currentColor">
+            <path
+              d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm14 0h2v2h-2v-2zm-4 0h2v2h-2v-2zm2 4h4v2h-4v-2zm2-2h2v2h-2v-2zm-4 2h2v2h-2v-2zm0-4h2v2h-2v-2zm-8-6h2v2H8v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm-4 4h2v2H8v-2zm4 0h2v2h-2v-2z">
+            </path>
+          </svg>
+          <span class="text-[7px] font-bold font-mono uppercase">D-FLIGHT
+            QR</span>
+        </div>
+        <div>
+          <h1 class="text-lg font-black uppercase text-slate-900">Registro
+            Ufficiale Operazioni UAS &amp; Flotta</h1>
+          <p class="text-xs text-slate-700 font-medium">Conforme Regolamento di
+            Esecuzione (UE) 2019/947 &amp; Disposizioni ENAC / EASA</p>
+          <div class="flex gap-4 mt-1 text-[11px] text-slate-900">
+            <span>Operatore: <strong id="print-op-name">AeroTech Pro Solutions
+                S.r.l.</strong></span>
+            <span>Cod. Operatore EASA: <strong class="font-mono"
+                id="print-op-code">ITA-OP-7749102</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="text-right text-xs">
+        <div><span class="font-bold">Pilota Comandante:</span> <span
+            id="print-pilot-name">Marco Rossi</span></div>
+        <p class="text-slate-800">Attestato: <span class="font-mono font-bold"
+            id="print-pilot-code">ITA-RP-8492</span></p>
+        <p class="text-slate-600 mt-1">Data Stampa: <span
+            id="print-date">--</span></p>
+      </div>
+    </div>
+    <div class="grid grid-cols-4 gap-2 mt-2 pt-1 text-[10px] text-slate-800">
+      <div><strong>Polizza Assicurativa:</strong> ALLIANZ-UAS-881920</div>
+      <div><strong>Massimale Sinistro:</strong> € 2.500.000</div>
+      <div><strong>Scenari Abilitati:</strong> OPEN A1/A2/A3 + STS-01/02</div>
+      <div><strong>Certificazione Medico/LAPL:</strong> Valido fino al
+        14/11/2026</div>
+    </div>
+  </div>
+
+  <!-- HEADER & APP NAVIGATION -->
+  <header
+    class="sticky top-0 z-40 bg-[#0f172a]/95 backdrop-blur border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20 gap-3">
+        <!-- Logo -->
+        <div class="flex items-center gap-3 shrink-0">
+          <img
+            src="https://raw.githubusercontent.com/andreadevita99/DroneHub/main/favicon.png"
+            alt="DroneLog Icon"
+            class="w-10 h-10 rounded-xl object-contain shadow-md">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xl font-extrabold text-white">DroneHub<span
+                  class="text-cyan-400">Log</span></span>
+            </div>
+            <p class="text-xs text-slate-400 hidden sm:block">Registro UAS &amp;
+              Gestione Flotta DJI</p>
+          </div>
+        </div>
+
+        <!-- Section Navigation Switcher -->
+        <nav
+          class="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs sm:text-sm font-semibold">
+          <button
+            class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-cyan-600 text-white shadow transition"
+            id="nav-btn-flights" onclick="setSection('flights')">
+            <i data-lucide="plane" class="w-4 h-4"></i>
+            <span>Logbook Voli</span>
+            <span
+              class="text-xs px-1.5 py-0.2 bg-cyan-950/80 rounded-full text-cyan-200"
+              id="badge-flights">0</span>
+          </button>
+          <button
+            class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-white transition"
+            id="nav-btn-batteries" onclick="setSection('batteries')">
+            <i data-lucide="battery-charging" class="w-4 h-4"></i>
+            <span>Batterie &amp; Cicli</span>
+            <span
+              class="text-xs px-1.5 py-0.2 bg-slate-800 rounded-full text-slate-300"
+              id="badge-batteries">0</span>
+          </button>
+          <button
+            class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-white transition"
+            id="nav-btn-maint" onclick="setSection('maint')">
+            <i data-lucide="wrench" class="w-4 h-4"></i>
+            <span>Manutenzione</span>
+            <span
+              class="text-xs px-1.5 py-0.2 bg-slate-800 rounded-full text-slate-300"
+              id="badge-maint">0</span>
+          </button>
+          <button
+            class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-white transition"
+            id="nav-btn-pilot" onclick="setSection('pilot')">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            <span>Pilota &amp; QR</span>
+          </button>
+        </nav>
+
+        <!-- Right: DJI Fleet Filter & PDF Action -->
+        <div class="flex items-center gap-2">
+          <!-- DJI Comprehensive Selector -->
+          <div
+            class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800">
+            <span
+              class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+            <div class="flex flex-col text-left">
+              <span
+                class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold leading-none">Filtro
+                Flotta DJI</span>
+              <select
+                class="bg-transparent border-0 p-0 text-xs font-bold text-cyan-400 focus:ring-0 cursor-pointer max-w-[140px] md:max-w-[190px] lg:max-w-[230px] truncate"
+                id="header-drone-filter"
+                onchange="onFleetFilterChange(this.value)">
+                <option class="bg-slate-900 text-white" value="ALL">Tutti i
+                  Droni DJI</option>
+                <optgroup class="bg-slate-900 text-cyan-400 font-semibold"
+                  label="DJI Serie Mini (Ultra-leggeri)">
+                  <option class="bg-slate-900 text-white" value="DJI Neo">DJI
+                    Neo (135g)</option>
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Mini 4 Pro">DJI Mini 4 Pro</option>
+                  <option class="bg-slate-900 text-white" value="DJI Mini 4K">
+                    DJI Mini 4K</option>
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Mini 3 Pro">DJI Mini 3 Pro</option>
+                  <option class="bg-slate-900 text-white" value="DJI Mini 3">DJI
+                    Mini 3</option>
+                  <option class="bg-slate-900 text-white" value="DJI Mini 2 SE">
+                    DJI Mini 2 SE</option>
+                </optgroup>
+                <optgroup class="bg-slate-900 text-emerald-400 font-semibold"
+                  label="DJI Serie Air">
+                  <option class="bg-slate-900 text-white" value="DJI Air 3S">DJI
+                    Air 3S (Doppio sensore &amp; LiDAR)</option>
+                  <option class="bg-slate-900 text-white" value="DJI Air 3">DJI
+                    Air 3</option>
+                  <option class="bg-slate-900 text-white" value="DJI Air 2S">DJI
+                    Air 2S</option>
+                </optgroup>
+                <optgroup class="bg-slate-900 text-blue-400 font-semibold"
+                  label="DJI Serie Mavic &amp; Prosumer">
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Mavic 3 Pro / Cine">DJI Mavic 3 Pro / Cine
+                  </option>
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Mavic 3 Classic">DJI Mavic 3 Classic</option>
+                  <option class="bg-slate-900 text-white" value="DJI Mavic 3">
+                    DJI Mavic 3</option>
+                </optgroup>
+                <optgroup class="bg-slate-900 text-amber-400 font-semibold"
+                  label="DJI Serie FPV &amp; Avata">
+                  <option class="bg-slate-900 text-white" value="DJI Avata 2">
+                    DJI Avata 2</option>
+                  <option class="bg-slate-900 text-white" value="DJI Avata">DJI
+                    Avata</option>
+                  <option class="bg-slate-900 text-white" value="DJI FPV">DJI
+                    FPV</option>
+                </optgroup>
+                <optgroup class="bg-slate-900 text-purple-400 font-semibold"
+                  label="DJI Cinema &amp; Film Pro">
+                  <option class="bg-slate-900 text-white" value="DJI Inspire 3">
+                    DJI Inspire 3 (8K Full-Frame)</option>
+                  <option class="bg-slate-900 text-white" value="DJI Inspire 2">
+                    DJI Inspire 2</option>
+                </optgroup>
+                <optgroup class="bg-slate-900 text-rose-400 font-semibold"
+                  label="DJI Enterprise &amp; Ispezioni">
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Matrice 350 RTK">DJI Matrice 350 RTK</option>
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Matrice 300 RTK">DJI Matrice 300 RTK</option>
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Matrice 30 / 30T">DJI Matrice 30 / 30T</option>
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Dock 2 (Matrice 3D / 3TD)">DJI Dock 2 (Matrice 3D
+                    / 3TD)</option>
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Mavic 3 Enterprise (3E)">DJI Mavic 3 Enterprise
+                    (3E)</option>
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Mavic 3 Thermal (3T)">DJI Mavic 3 Thermal (3T)
+                  </option>
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Mavic 3 Multispectral (3M)">DJI Mavic 3
+                    Multispectral (3M)</option>
+                </optgroup>
+                <optgroup class="bg-slate-900 text-yellow-400 font-semibold"
+                  label="DJI Delivery &amp; Agricoltura">
+                  <option class="bg-slate-900 text-white"
+                    value="DJI FlyCart 30">DJI FlyCart 30 (Heavy Delivery)
+                  </option>
+                  <option class="bg-slate-900 text-white" value="DJI Agras T50">
+                    DJI Agras T50</option>
+                  <option class="bg-slate-900 text-white" value="DJI Agras T25">
+                    DJI Agras T25</option>
+                  <option class="bg-slate-900 text-white" value="DJI Agras T40">
+                    DJI Agras T40</option>
+                  <option class="bg-slate-900 text-white"
+                    value="DJI Phantom 4 RTK">DJI Phantom 4 RTK</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <!-- Stampa PDF ENAC -->
+          <button
+            class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold shadow transition"
+            onclick="triggerPrintENAC()"
+            title="Stampa Ufficiale Conforme ENAC/EASA">
+            <i data-lucide="printer" class="w-4 h-4 text-emerald-400"></i>
+            <span class="hidden md:inline">Stampa PDF</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- NOTIFICATION TOAST -->
+  <div
+    class="fixed bottom-5 right-5 z-50 transform transition-all duration-300 pointer-events-none bg-slate-900 border border-cyan-500 text-white text-xs px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 translate-y-16 opacity-0"
+    id="toast-notify">
+    <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+    <span id="toast-msg">Notifica di sistema</span>
+  </div>
+
+  <!-- MAIN BODY -->
+  <main
+    class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- KPI SUMMARY STRIP -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4" id="kpi-strip">
+      <div
+        class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4">
+        <div
+          class="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-800/60 flex items-center justify-center text-cyan-400 shrink-0">
+          <i data-lucide="clock" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <p
+            class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Ore Totali Volo</p>
+          <h2 class="text-xl sm:text-2xl font-bold text-white font-mono-num"
+            id="kpi-total-hours">0h 00m</h2>
+          <span
+            class="text-[11px] text-cyan-400 font-medium flex items-center gap-1">Registro
+            UAS</span>
+        </div>
+      </div>
+      <div
+        class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4">
+        <div
+          class="w-12 h-12 rounded-xl bg-blue-950/80 border border-blue-800/60 flex items-center justify-center text-blue-400 shrink-0">
+          <i data-lucide="plane-takeoff" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <p
+            class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Missioni Eseguite</p>
+          <h2 class="text-xl sm:text-2xl font-bold text-white font-mono-num"
+            id="kpi-total-flights">0</h2>
+          <span class="text-[11px] text-slate-400" id="kpi-flights-sub">Nessuna
+            missione registrata</span>
+        </div>
+      </div>
+      <div
+        class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4">
+        <div
+          class="w-12 h-12 rounded-xl bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0">
+          <i data-lucide="battery-charging" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <p
+            class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Parco Batterie</p>
+          <h2 class="text-xl sm:text-2xl font-bold text-white font-mono-num"
+            id="kpi-battery-count">0 pacchi</h2>
+          <span class="text-[11px] text-emerald-400 font-medium"
+            id="kpi-battery-soh">SOH medio: --</span>
+        </div>
+      </div>
+      <div
+        class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4">
+        <div
+          class="w-12 h-12 rounded-xl bg-amber-950/80 border border-amber-800/60 flex items-center justify-center text-amber-400 shrink-0">
+          <i data-lucide="wrench" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <p
+            class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Manutenzioni</p>
+          <h2 class="text-xl sm:text-2xl font-bold text-white font-mono-num"
+            id="kpi-maint-count">0</h2>
+          <span class="text-[11px] text-amber-400 font-medium"
+            id="kpi-maint-sub">Nessun intervento attivo</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION GRAFICI INTERATTIVI -->
+    <section
+      class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4"
+      id="chart-card">
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span
+              class="p-1.5 rounded-lg bg-cyan-950 text-cyan-400 border border-cyan-800">
+              <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+            </span>
+            <h2 class="text-lg font-bold text-white">Analisi Grafica Ore di Volo
+            </h2>
+          </div>
+          <p class="text-xs text-slate-400">Distribuzione tempo di volo
+            filtrabile per periodo e drone</p>
+        </div>
+        <!-- Period Toggle Switcher -->
+        <div
+          class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+          <button class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white shadow"
+            id="tab-chart-weekly"
+            onclick="changeChartPeriod('weekly')">Settimanale</button>
+          <button
+            class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition"
+            id="tab-chart-monthly"
+            onclick="changeChartPeriod('monthly')">Mensile</button>
+          <button
+            class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition"
+            id="tab-chart-yearly"
+            onclick="changeChartPeriod('yearly')">Annuale</button>
+        </div>
+      </div>
+
+      <!-- Chart Stats Badges -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+          <span class="text-slate-400 font-semibold text-[10px] uppercase">Ore
+            nel Periodo</span>
+          <p class="text-base font-bold text-cyan-400 font-mono-num mt-0.5"
+            id="chart-stat-hours">0h 00m</p>
+        </div>
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+          <span
+            class="text-slate-400 font-semibold text-[10px] uppercase">Missioni
+            Totali</span>
+          <p class="text-base font-bold text-white font-mono-num mt-0.5"
+            id="chart-stat-flights">0 voli</p>
+        </div>
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+          <span class="text-slate-400 font-semibold text-[10px] uppercase">Picco
+            Massimo</span>
+          <p class="text-base font-bold text-emerald-400 font-mono-num mt-0.5"
+            id="chart-stat-peak">0 min</p>
+        </div>
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+          <span class="text-slate-400 font-semibold text-[10px] uppercase">Media
+            Intervallo</span>
+          <p class="text-base font-bold text-slate-300 font-mono-num mt-0.5"
+            id="chart-stat-avg">0 min</p>
+        </div>
+      </div>
+
+      <!-- Vector Dynamic Bar Chart -->
+      <div
+        class="relative bg-slate-950/90 rounded-xl border border-slate-800 p-4 pt-6">
+        <div class="w-full h-52 flex items-end justify-between gap-1 sm:gap-2"
+          id="chart-bar-container">
+          <div
+            class="w-full h-full flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-800 rounded-xl">
+            <i data-lucide="bar-chart" class="w-8 h-8 text-slate-600 mb-2"></i>
+            <p class="text-sm font-semibold text-slate-400">Nessun dato di volo
+              registrato</p>
+            <p class="text-xs text-slate-600 max-w-sm mt-1">Registra le tue
+              prime missioni UAS per visualizzare il grafico temporale delle ore
+              di volo.</p>
+          </div>
+        </div>
+        <!-- Tooltip -->
+        <div
+          class="absolute pointer-events-none hidden bg-slate-900 border border-cyan-500 text-white text-xs px-2.5 py-1.5 rounded-lg shadow-xl z-20"
+          id="chart-tooltip">
+          <div class="font-bold text-cyan-300" id="tooltip-title">--</div>
+          <div class="font-mono-num text-slate-200" id="tooltip-value">--</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: LOGBOOK VOLI (Visibile di default) -->
+    <div class="space-y-4" id="section-flights">
+      <div
+        class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+        <div>
+          <h2 class="text-xl font-bold text-white">Parte 1: Registro Missioni
+            &amp; Operazioni Drone</h2>
+          <p class="text-xs text-slate-400">Tracciamento voli UAS, quote AGL,
+            piloti e batterie conformi normative EASA/ENAC.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <input
+            class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            id="flight-search" oninput="renderFlights()"
+            placeholder="Cerca volo, pilota, drone..." type="text">
+          <button
+            class="flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 text-white font-semibold px-3.5 py-1.5 rounded-xl text-xs shadow-md transition"
+            onclick="openModalFlight()">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Nuova Missione
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Flights -->
+      <div
+        class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs" id="table-flights">
+            <thead
+              class="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+              <tr>
+                <th class="px-4 py-3.5">Data &amp; ID</th>
+                <th class="px-4 py-3.5">Drone DJI</th>
+                <th class="px-4 py-3.5">Luogo &amp; Quota AGL</th>
+                <th class="px-4 py-3.5">Pilota &amp; Scenario</th>
+                <th class="px-4 py-3.5">Durata</th>
+                <th class="px-4 py-3.5">Batteria &amp; Condizioni</th>
+                <th class="px-4 py-3.5 text-center">Esito</th>
+                <th class="px-4 py-3.5 text-right no-print">Azioni</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60" id="tbody-flights">
+              <!-- Render dinamico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ENAC OFFICIAL FOOTER FOR PRINT -->
+      <div
+        class="hidden mt-6 pt-4 border-t border-slate-900 text-[10px] text-slate-900"
+        id="enac-print-footer">
+        <div class="flex justify-between items-end">
+          <div>
+            <p><strong>Dichiarazione Pilota Comandante:</strong> I dati
+              riportati nel presente registro sono conformi alle operazioni UAS
+              effettivamente svolte.</p>
+          </div>
+          <div class="text-right">
+            <div
+              class="w-60 border-b border-slate-900 pb-8 text-center text-slate-400">
+              Timbro e Firma Responsabile Operazioni</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: BATTERY LIFE & HEALTH LOGBOOK -->
+    <div class="space-y-4 hidden" id="section-batteries">
+      <div
+        class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+        <div>
+          <h2 class="text-xl font-bold text-white">Registro Batterie &amp; Cicli
+            di Ricarica DJI</h2>
+          <p class="text-xs text-slate-400">Traccia cicli di ricarica, stato di
+            salute (SOH %), bilanciamento celle e storage.</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <input
+            class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            id="battery-search" oninput="renderBatteries()"
+            placeholder="Cerca batteria..." type="text">
+          <button
+            class="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-semibold px-3.5 py-1.5 rounded-xl text-xs shadow-md transition"
+            onclick="openModalBattery()">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Aggiungi Batteria
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Batteries -->
+      <div
+        class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs" id="table-batteries">
+            <thead
+              class="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+              <tr>
+                <th class="px-4 py-3.5">ID / Seriale Pacco</th>
+                <th class="px-4 py-3.5">Drone Compatibile</th>
+                <th class="px-4 py-3.5">Cicli Effettuati / Limite</th>
+                <th class="px-4 py-3.5">Stato Salute (SOH)</th>
+                <th class="px-4 py-3.5">Delta Celle (mV)</th>
+                <th class="px-4 py-3.5">Ultimo Utilizzo</th>
+                <th class="px-4 py-3.5 text-center">Stato</th>
+                <th class="px-4 py-3.5 text-right">Azioni</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60" id="tbody-batteries">
+              <!-- Render dinamico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: MAINTENANCE -->
+    <div class="space-y-4 hidden" id="section-maint">
+      <div
+        class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+        <div>
+          <h2 class="text-xl font-bold text-white">Parte 2: Registro
+            Manutenzione &amp; Ispezioni DJI</h2>
+          <p class="text-xs text-slate-400">Ispezioni periodiche, sostituzione
+            eliche/motori, firmware e calibrazioni.</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <input
+            class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+            id="maint-search" oninput="renderMaintenance()"
+            placeholder="Cerca componente o tecnico..." type="text">
+          <button
+            class="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 text-white font-semibold px-3.5 py-1.5 rounded-xl text-xs shadow-md transition"
+            onclick="openModalMaint()">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Nuovo Intervento
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Maintenance -->
+      <div
+        class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs" id="table-maint">
+            <thead
+              class="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+              <tr>
+                <th class="px-4 py-3.5">Data Intervento</th>
+                <th class="px-4 py-3.5">Drone &amp; Componente</th>
+                <th class="px-4 py-3.5">Tipologia Intervento</th>
+                <th class="px-4 py-3.5">Tecnico / Centro</th>
+                <th class="px-4 py-3.5">Ore Volo Cellula</th>
+                <th class="px-4 py-3.5">Prossima Scadenza</th>
+                <th class="px-4 py-3.5 text-center">Stato</th>
+                <th class="px-4 py-3.5 text-right">Azioni</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60" id="tbody-maint">
+              <!-- Render dinamico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: PILOT & QR CODE -->
+    <div class="space-y-4 hidden" id="section-pilot">
+      <div
+        class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+        <div>
+          <h2 class="text-xl font-bold text-white">Parte 3: Anagrafica Pilota
+            UAS &amp; Certificazioni EASA</h2>
+          <p class="text-xs text-slate-400">Attestati di competenza A1/A3, A2 e
+            scenari specifici STS / SORA con Codice Operatore ENAC e QR adesivo.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="openEditPilotModal()"
+            class="flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 text-white font-semibold px-3.5 py-1.5 rounded-xl text-xs shadow-md transition">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Modifica Anagrafica
+          </button>
+          <button onclick="triggerPrintQRBadge()"
+            class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-semibold px-3 py-1.5 rounded-xl text-xs transition">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Stampa Adesivo QR
+            Drone
+          </button>
+        </div>
+      </div>
+
+      <!-- PROMINENT QR CODE BADGE PREVIEW -->
+      <div
+        class="bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/40 border border-cyan-500/40 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-5">
+        <div
+          class="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          <div
+            class="w-24 h-24 bg-white p-2 rounded-xl border-2 border-cyan-400 shadow flex flex-col items-center justify-center shrink-0">
+            <svg class="w-16 h-16 text-slate-900" viewBox="0 0 24 24"
+              fill="currentColor">
+              <path
+                d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm14 0h2v2h-2v-2zm-4 0h2v2h-2v-2zm2 4h4v2h-4v-2zm2-2h2v2h-2v-2zm-4 2h2v2h-2v-2zm0-4h2v2h-2v-2zm-8-6h2v2H8v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm-4 4h2v2H8v-2zm4 0h2v2h-2v-2z">
+              </path>
+            </svg>
+            <span
+              class="text-[8px] font-black text-slate-900 tracking-wider font-mono">D-FLIGHT
+              EASA</span>
+          </div>
+          <div>
+            <div
+              class="flex items-center gap-2 justify-center sm:justify-start">
+              <span
+                class="text-xs font-bold uppercase tracking-wider text-cyan-400">Adesivo
+                Ufficiale QR Code UAS</span>
+              <span
+                class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-semibold">Pronto
+                per Telaio</span>
+            </div>
+            <h3 class="text-base font-bold text-white mt-1">Identificativo
+              Digitale Operatore ENAC: <span class="text-cyan-300 font-mono"
+                id="badge-qr-code-label">ITA-OP-7749102</span></h3>
+            <p class="text-xs text-slate-400 max-w-xl mt-1">Obbligatorio da
+              applicare su tutti i droni della flotta DJI conforme art. 14
+              Regolamento (UE) 2019/947 per controlli di polizia e sicurezza
+              D-Flight.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARDS ANAGRAFICA -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div
+            class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-800/60 flex items-center justify-center text-cyan-400">
+                <i data-lucide="plane" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Operatore UAS
+                  Riconosciuto</h3>
+                <p class="text-xs text-slate-400" id="card-op-name">AeroTech Pro
+                  Solutions S.r.l.</p>
+              </div>
+            </div>
+            <button onclick="openEditPilotModal()"
+              class="text-xs text-cyan-400 hover:text-cyan-300 font-medium underline">Modifica</button>
+          </div>
+          <div class="space-y-3 text-xs">
+            <div
+              class="flex justify-between py-1.5 border-b border-slate-800/60">
+              <span class="text-slate-400">Codice Operatore EASA</span>
+              <span class="font-mono font-bold text-cyan-400"
+                id="card-op-code">ITA-OP-7749102</span>
+            </div>
+            <div
+              class="flex justify-between py-1.5 border-b border-slate-800/60">
+              <span class="text-slate-400">Stato Registrazione</span>
+              <span class="text-emerald-400 font-semibold">Attiva &amp;
+                Verificata D-Flight</span>
+            </div>
+            <div
+              class="flex justify-between py-1.5 border-b border-slate-800/60">
+              <span class="text-slate-400">Polizza Assicurativa UAS</span>
+              <span class="text-slate-200 font-mono"
+                id="card-op-insurance">ALLIANZ-UAS-881920</span>
+            </div>
+            <div class="flex justify-between py-1.5">
+              <span class="text-slate-400">Massimale Operativo</span>
+              <span class="text-slate-200 font-medium" id="card-op-max">€
+                2.500.000 / Sinistro</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div
+            class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-xl bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Pilota Comandante
+                  Designato</h3>
+                <p class="text-xs text-slate-400" id="card-pilot-name">Marco
+                  Rossi</p>
+              </div>
+            </div>
+            <button onclick="openEditPilotModal()"
+              class="text-xs text-cyan-400 hover:text-cyan-300 font-medium underline">Modifica</button>
+          </div>
+          <div class="space-y-3 text-xs">
+            <div
+              class="flex justify-between py-1.5 border-b border-slate-800/60">
+              <span class="text-slate-400">Attestato Pilota UAS</span>
+              <span class="font-mono font-bold text-emerald-400"
+                id="card-pilot-code">ITA-RP-8492</span>
+            </div>
+            <div
+              class="flex justify-between py-1.5 border-b border-slate-800/60">
+              <span class="text-slate-400">Abilitazioni Categoria</span>
+              <span class="text-slate-200 font-medium" id="card-pilot-cats">OPEN
+                A1/A3, A2 + SPECIFIC STS-01/02</span>
+            </div>
+            <div
+              class="flex justify-between py-1.5 border-b border-slate-800/60">
+              <span class="text-slate-400">Scadenza Rinnovo Medico / LAPL</span>
+              <span class="text-slate-200 font-mono"
+                id="card-pilot-med">14/11/2026</span>
+            </div>
+            <div class="flex justify-between py-1.5">
+              <span class="text-slate-400">Validità Attestato ENAC</span>
+              <span class="text-emerald-400 font-semibold">In Corso di
+                Validità</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRE-FLIGHT CHECKLIST WIDGET -->
+    <section class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4"
+      id="checklist-box">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400"></i>
+          <h3 class="text-xs font-bold text-white uppercase tracking-wider">
+            Checklist Rapida Pre-Volo (ENAC/EASA)</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="text-[11px] text-slate-400 hover:text-cyan-400 transition underline underline-offset-2"
+            onclick="resetChecklist()">Azzera Checklist</button>
+          <span class="text-slate-600">|</span>
+          <span class="text-[11px] text-slate-400">Safe Operations
+            Standard</span>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 text-xs text-slate-300">
+        <label
+          class="flex items-center gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+          <input
+            class="chk-item rounded text-cyan-600 bg-slate-800 border-slate-700 focus:ring-0"
+            id="chk-1" onchange="saveChecklistState()" type="checkbox">
+          <span>Verifica Spazio D-Flight &amp; NOTAM</span>
+        </label>
+        <label
+          class="flex items-center gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+          <input
+            class="chk-item rounded text-cyan-600 bg-slate-800 border-slate-700 focus:ring-0"
+            id="chk-2" onchange="saveChecklistState()" type="checkbox">
+          <span>Eliche serrate &amp; Gimbal sbloccato</span>
+        </label>
+        <label
+          class="flex items-center gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+          <input
+            class="chk-item rounded text-cyan-600 bg-slate-800 border-slate-700 focus:ring-0"
+            id="chk-3" onchange="saveChecklistState()" type="checkbox">
+          <span>Batteria drone &amp; RC &gt; 90%</span>
+        </label>
+        <label
+          class="flex items-center gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+          <input
+            class="chk-item rounded text-cyan-600 bg-slate-800 border-slate-700 focus:ring-0"
+            id="chk-4" onchange="saveChecklistState()" type="checkbox">
+          <span>RTH impostato e Satelliti &gt; 12</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- DATABASE CONTROLS & BACKUP PANEL -->
+    <section
+      class="bg-slate-900/40 border border-slate-800/90 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+      <div class="flex items-center gap-2.5">
+        <i data-lucide="database" class="w-4 h-4 text-cyan-400"></i>
+        <span><strong>Gestione Database Locale:</strong> Nessun server esterno,
+          massima privacy e sicurezza.</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-semibold transition flex items-center gap-1.5"
+          onclick="loadDemoData()">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Carica Dati Demo
+        </button>
+        <button
+          class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5"
+          onclick="exportJSON()">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i> Esporta JSON
+        </button>
+        <button
+          class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5"
+          onclick="exportCSV()">
+          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Esporta CSV
+        </button>
+        <label
+          class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer flex items-center gap-1.5">
+          <i data-lucide="upload" class="w-3.5 h-3.5"></i> Importa
+          <input accept=".json" class="hidden" id="import-file"
+            onchange="importJSON(event)" type="file">
+        </label>
+        <button
+          class="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800 transition flex items-center gap-1.5"
+          onclick="confirmResetDatabase()">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Reset Database
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: VOLO -->
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden"
+    id="modal-flight">
+    <div
+      class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-5">
+      <div
+        class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white" id="modal-flight-title">Nuova
+          Missione di Volo</h3>
+        <button class="text-slate-400 hover:text-white"
+          onclick="closeModalFlight()"><i data-lucide="x"
+            class="w-5 h-5"></i></button>
+      </div>
+      <form class="space-y-3.5 text-xs" id="form-flight"
+        onsubmit="saveFlight(event)">
+        <input id="flight-id" type="hidden">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Data &amp; Ora *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="f-date" required type="datetime-local">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Drone DJI *</label>
+            <select
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="f-drone" required>
+              <optgroup label="DJI Serie Mini">
+                <option value="DJI Neo">DJI Neo (135g)</option>
+                <option selected value="DJI Mini 4 Pro">DJI Mini 4 Pro</option>
+                <option value="DJI Mini 4K">DJI Mini 4K</option>
+                <option value="DJI Mini 3 Pro">DJI Mini 3 Pro</option>
+                <option value="DJI Mini 3">DJI Mini 3</option>
+                <option value="DJI Mini 2 SE">DJI Mini 2 SE</option>
+              </optgroup>
+              <optgroup label="DJI Serie Air">
+                <option value="DJI Air 3S">DJI Air 3S</option>
+                <option value="DJI Air 3">DJI Air 3</option>
+                <option value="DJI Air 2S">DJI Air 2S</option>
+              </optgroup>
+              <optgroup label="DJI Serie Mavic &amp; Prosumer">
+                <option value="DJI Mavic 3 Pro / Cine">DJI Mavic 3 Pro / Cine
+                </option>
+                <option value="DJI Mavic 3 Classic">DJI Mavic 3 Classic</option>
+                <option value="DJI Mavic 3">DJI Mavic 3</option>
+              </optgroup>
+              <optgroup label="DJI Enterprise &amp; Ispezioni">
+                <option value="DJI Matrice 350 RTK">DJI Matrice 350 RTK</option>
+                <option value="DJI Mavic 3 Enterprise (3E)">DJI Mavic 3
+                  Enterprise (3E)</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Pilota (Nome &amp; ID)
+              *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="f-pilot" placeholder="Es. Marco Rossi (ITA-RP-8492)" required
+              type="text" value="Marco Rossi (ITA-RP-8492)">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Scenario Operativo
+              *</label>
+            <select
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="f-scenario">
+              <option value="Open A1/A3">Open A1/A3</option>
+              <option value="Open A2">Open A2</option>
+              <option value="Specific STS-01">Specific STS-01 (VLOS)</option>
+              <option value="Specific STS-02">Specific STS-02 (BVLOS)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Luogo Volo *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="f-location" placeholder="Roma - Cantiere Est" required
+              type="text">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Durata (minuti) *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="f-duration" max="180" min="1" required type="number"
+              value="25">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Quota AGL (m)</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="f-altitude" type="number" value="45">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Pacco Batteria
+              Utilizzato</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="f-battery" placeholder="TB65-Set#1" type="text">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Meteo &amp; Vento</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="f-weather" placeholder="Sereno, 8 km/h" type="text">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button
+            class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
+            onclick="closeModalFlight()" type="button">Annulla</button>
+          <button
+            class="px-4 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold"
+            type="submit">Salva Missione</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: BATTERIA -->
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden"
+    id="modal-battery">
+    <div
+      class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-5">
+      <div
+        class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white">Aggiungi Pacco Batteria DJI
+        </h3>
+        <button class="text-slate-400 hover:text-white"
+          onclick="closeModalBattery()"><i data-lucide="x"
+            class="w-5 h-5"></i></button>
+      </div>
+      <form class="space-y-3 text-xs" id="form-battery"
+        onsubmit="saveBattery(event)">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Seriale / ID Pacco
+              *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="b-serial" placeholder="TB65-SN-8921" required type="text">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Modello Batteria *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="b-type" placeholder="DJI TB65 Dual Pack" required type="text">
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-300 mb-1">Drone Associato *</label>
+          <select
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+            id="b-drone" required>
+            <option value="DJI Mini 4 Pro">DJI Mini 4 Pro</option>
+            <option value="DJI Air 3S">DJI Air 3S</option>
+            <option value="DJI Matrice 350 RTK">DJI Matrice 350 RTK</option>
+            <option value="DJI Mavic 3 Enterprise (3E)">DJI Mavic 3 Enterprise
+              (3E)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Cicli Attuali *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="b-cycles" min="0" required type="number" value="0">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Cicli Max</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="b-max-cycles" type="number" value="200">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Salute SOH (%)</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="b-soh" max="100" min="0" type="number" value="100">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Delta-V Celle (mV)</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="b-delta" type="number" value="4">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Stato</label>
+            <select
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="b-status">
+              <option value="In Servizio">In Servizio (OK)</option>
+              <option value="In Manutenzione">In Manutenzione</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300"
+            onclick="closeModalBattery()" type="button">Annulla</button>
+          <button
+            class="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+            type="submit">Salva Batteria</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: MANUTENZIONE -->
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden"
+    id="modal-maint">
+    <div
+      class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-5">
+      <div
+        class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white">Nuovo Intervento Manutenzione
+        </h3>
+        <button class="text-slate-400 hover:text-white"
+          onclick="closeModalMaint()"><i data-lucide="x"
+            class="w-5 h-5"></i></button>
+      </div>
+      <form class="space-y-3 text-xs" id="form-maint"
+        onsubmit="saveMaint(event)">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Data *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="m-date" required type="date">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Drone DJI *</label>
+            <select
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="m-drone">
+              <option value="DJI Mini 4 Pro">DJI Mini 4 Pro</option>
+              <option value="DJI Air 3S">DJI Air 3S</option>
+              <option value="DJI Matrice 350 RTK">DJI Matrice 350 RTK</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Componente *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="m-comp" placeholder="Eliche, Braccio, Gimbal..." required
+              type="text">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Tipo Intervento *</label>
+            <select
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="m-type">
+              <option value="Ispezione Eliche e Motori">Ispezione Eliche e
+                Motori</option>
+              <option value="Aggiornamento Firmware">Aggiornamento Firmware
+              </option>
+              <option value="Calibrazione Sensori / IMU">Calibrazione Sensori /
+                IMU</option>
+              <option value="Sostituzione Componenti">Sostituzione Componenti
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Tecnico *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="m-tech" placeholder="Ing. L. Bianchi" required type="text">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Ore Volo Cellula</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="m-hours" step="0.1" type="number" value="0.0">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300"
+            onclick="closeModalMaint()" type="button">Annulla</button>
+          <button
+            class="px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold"
+            type="submit">Salva Intervento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT PILOT -->
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden"
+    id="modal-pilot-edit">
+    <div
+      class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-5">
+      <div
+        class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white">Modifica Anagrafica Operatore
+          &amp; Pilota UAS</h3>
+        <button class="text-slate-400 hover:text-white"
+          onclick="closeEditPilotModal()"><i data-lucide="x"
+            class="w-5 h-5"></i></button>
+      </div>
+      <form class="space-y-3.5 text-xs" onsubmit="savePilotAnagrafica(event)">
+        <div
+          class="text-slate-400 uppercase tracking-wider text-[10px] font-semibold border-b border-slate-800 pb-1">
+          Dati Operatore UAS ENAC/EASA</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Ragione Sociale / Operatore
+              *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="edit-op-name" required type="text"
+              value="AeroTech Pro Solutions S.r.l.">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Codice Operatore EASA
+              *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white font-mono"
+              id="edit-op-code" required type="text" value="ITA-OP-7749102">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Polizza Assicurativa
+              UAS</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="edit-op-ins" type="text" value="ALLIANZ-UAS-881920">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Massimale (€)</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="edit-op-max" type="text" value="€ 2.500.000 / Sinistro">
+          </div>
+        </div>
+        <div
+          class="text-slate-400 uppercase tracking-wider text-[10px] font-semibold border-b border-slate-800 pb-1 pt-2">
+          Dati Pilota Comandante Designato</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Nome e Cognome Pilota
+              *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="edit-pilot-name" required type="text" value="Marco Rossi">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Attestato Pilota UAS
+              *</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white font-mono"
+              id="edit-pilot-code" required type="text" value="ITA-RP-8492">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">Abilitazioni
+              Scenari</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="edit-pilot-cats" type="text"
+              value="OPEN A1/A3, A2 + SPECIFIC STS-01/02">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Scadenza Visita Medica /
+              LAPL</label>
+            <input
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white"
+              id="edit-pilot-med" type="text" value="14/11/2026">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button
+            class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
+            onclick="closeEditPilotModal()" type="button">Annulla</button>
+          <button
+            class="px-4 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold"
+            type="submit">Salva Anagrafica</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer
+    class="mt-auto border-t border-slate-800/80 bg-slate-950 py-4 text-center text-xs text-slate-500">
+    <div
+      class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+        <p>DroneHubLog Pro © Registro UAS Conforme EASA/ENAC &amp; Catalogo
+          Ufficiale DJI</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="hover:text-cyan-400 underline underline-offset-2"
+          onclick="loadDemoData()">Carica Demo</button>
+        <span class="text-slate-700">•</span>
+        <button class="hover:text-rose-400 underline underline-offset-2"
+          onclick="confirmResetDatabase()">Reset DB</button>
+        <span class="text-slate-700">•</span>
+        <span>Storage locale del browser (Zero Cloud tracking)</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    const K_FLIGHTS = 'dronelog_v28_flights';
+    const K_BATTERIES = 'dronelog_v28_batteries';
+    const K_MAINT = 'dronelog_v28_maint';
+    const K_CHECKLIST = 'dronelog_v28_checklist';
+
+    const DEMO_FLIGHTS = [
+      { id: "FL-2026-001", date: "2026-11-15T09:30", drone: "DJI Matrice 350 RTK", pilot: "Marco Rossi (ID: ITA-RP-8492)", scenario: "Specific STS-01", location: "Roma Est - Cantiere Hub Logistico", duration: 38, altitude: 65, battery: "TB65-Set#1 (99% -> 24%)", weather: "Soleggiato, Vento 9 km/h", status: "Completata" },
+      { id: "FL-2026-002", date: "2026-11-16T14:15", drone: "DJI Mavic 3 Enterprise (3E)", pilot: "Sara Galli (ID: ITA-RP-9912)", scenario: "Open A2", location: "Milano - Ispezione Copertura Industriale", duration: 24, altitude: 40, battery: "Bat#2 (95% -> 31%)", weather: "Coperto, Vento 14 km/h", status: "Completata" },
+      { id: "FL-2026-003", date: "2026-11-17T11:00", drone: "DJI Air 3S", pilot: "Marco Rossi (ID: ITA-RP-8492)", scenario: "Open A1/A3", location: "Parco Fluviale Tevere", duration: 18, altitude: 35, battery: "A3S-Bat#1 (100% -> 42%)", weather: "Leggera brezza", status: "Completata" }
+    ];
+
+    const DEMO_BATTERIES = [
+      { id: "BAT-01", serial: "TB65-SN-8921", type: "DJI TB65 Dual Battery", drone: "DJI Matrice 350 RTK", cycles: 34, maxCycles: 200, soh: 96, deltaV: 5, lastUse: "2026-11-15", status: "In Servizio" },
+      { id: "BAT-02", serial: "M3E-BAT-0412", type: "DJI M3E Flight Battery", drone: "DJI Mavic 3 Enterprise (3E)", cycles: 42, maxCycles: 200, soh: 94, deltaV: 8, lastUse: "2026-11-16", status: "In Servizio" },
+      { id: "BAT-03", serial: "A3S-BAT-9011", type: "DJI Air 3S Intelligent Battery", drone: "DJI Air 3S", cycles: 12, maxCycles: 200, soh: 99, deltaV: 3, lastUse: "2026-11-17", status: "In Servizio" }
+    ];
+
+    const DEMO_MAINT = [
+      { id: "MN-001", date: "2026-11-10", drone: "DJI Matrice 350 RTK", comp: "Set Eliche 2110s (4x)", type: "Ispezione Eliche e Motori", tech: "Ing. Luca Bianchi", hours: 125.4, nextDue: "2027-02-15", status: "Completato" }
+    ];
+
+    let flights = JSON.parse(localStorage.getItem(K_FLIGHTS) || '[]');
+    let batteries = JSON.parse(localStorage.getItem(K_BATTERIES) || '[]');
+    let maintenance = JSON.parse(localStorage.getItem(K_MAINT) || '[]');
+
+    let activeDrone = 'ALL';
+    let currentChartPeriod = 'weekly';
+
+    function init() {
+      loadChecklistState();
+      renderFlights();
+      renderBatteries();
+      renderMaintenance();
+      updateKPIs();
+      renderChart();
+      lucide.createIcons();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-notify');
+      const text = document.getElementById('toast-msg');
+      if (!toast || !text) return;
+      text.textContent = msg;
+      toast.classList.remove('translate-y-16', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.add('translate-y-16', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 3000);
+    }
+
+    function setSection(sec) {
+      document.getElementById('section-flights').classList.toggle('hidden', sec !== 'flights');
+      document.getElementById('section-batteries').classList.toggle('hidden', sec !== 'batteries');
+      document.getElementById('section-maint').classList.toggle('hidden', sec !== 'maint');
+      document.getElementById('section-pilot').classList.toggle('hidden', sec !== 'pilot');
+
+      const btnF = document.getElementById('nav-btn-flights');
+      const btnB = document.getElementById('nav-btn-batteries');
+      const btnM = document.getElementById('nav-btn-maint');
+      const btnP = document.getElementById('nav-btn-pilot');
+
+      [btnF, btnB, btnM, btnP].forEach(b => {
+        if (b) b.className = "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-white transition";
+      });
+
+      if (sec === 'flights') btnF.className = "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-cyan-600 text-white shadow";
+      if (sec === 'batteries') btnB.className = "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-emerald-600 text-white shadow";
+      if (sec === 'maint') btnM.className = "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-amber-600 text-white shadow";
+      if (sec === 'pilot') btnP.className = "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-blue-600 text-white shadow";
+
+      lucide.createIcons();
+    }
+
+    function onFleetFilterChange(val) {
+      activeDrone = val;
+      renderFlights();
+      renderBatteries();
+      renderMaintenance();
+      updateKPIs();
+      renderChart();
+    }
+
+    function changeChartPeriod(p) {
+      currentChartPeriod = p;
+      ['weekly', 'monthly', 'yearly'].forEach(k => {
+        const btn = document.getElementById(`tab-chart-${k}`);
+        if (btn) {
+          btn.className = (k === p)
+            ? "px-3 py-1.5 rounded-lg bg-cyan-600 text-white shadow"
+            : "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition";
+        }
+      });
+      renderChart();
+    }
+
+    function renderChart() {
+      const container = document.getElementById('chart-bar-container');
+      const targetFlights = activeDrone === 'ALL' ? flights : flights.filter(f => f.drone === activeDrone);
+      let data = [];
+
+      if (currentChartPeriod === 'weekly') {
+        const days = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(today.getDate() - i);
+          const dStr = d.toISOString().slice(0, 10);
+          const dayMinutes = targetFlights.filter(f => (f.date || '').slice(0, 10) === dStr).reduce((s, f) => s + (parseInt(f.duration) || 0), 0);
+          data.push({ label: `${days[d.getDay()]} ${d.getDate()}`, minutes: dayMinutes, count: targetFlights.filter(f => (f.date || '').slice(0, 10) === dStr).length });
+        }
+      } else if (currentChartPeriod === 'monthly') {
+        const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+        const today = new Date();
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+          const mStr = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+          const mMinutes = targetFlights.filter(f => (f.date || '').startsWith(mStr)).reduce((s, f) => s + (parseInt(f.duration) || 0), 0);
+          data.push({ label: `${months[d.getMonth()]} '${d.getFullYear().toString().slice(2)}`, minutes: mMinutes, count: targetFlights.filter(f => (f.date || '').startsWith(mStr)).length });
+        }
+      } else {
+        const currentYear = new Date().getFullYear();
+        for (let y = currentYear - 2; y <= currentYear; y++) {
+          const yMinutes = targetFlights.filter(f => (f.date || '').startsWith(y.toString())).reduce((s, f) => s + (parseInt(f.duration) || 0), 0);
+          data.push({ label: `${y}`, minutes: yMinutes, count: targetFlights.filter(f => (f.date || '').startsWith(y.toString())).length });
+        }
+      }
+
+      const totalMin = data.reduce((s, d) => s + d.minutes, 0);
+      const totalVoli = data.reduce((s, d) => s + d.count, 0);
+      const peak = Math.max(...data.map(d => d.minutes), 0);
+      const avg = Math.round(totalMin / (data.length || 1));
+
+      document.getElementById('chart-stat-hours').textContent = `${Math.floor(totalMin / 60)}h ${(totalMin % 60).toString().padStart(2, '0')}m`;
+      document.getElementById('chart-stat-flights').textContent = `${totalVoli} voli`;
+      document.getElementById('chart-stat-peak').textContent = peak >= 60 ? `${Math.floor(peak / 60)}h ${peak % 60}m` : `${peak} min`;
+      document.getElementById('chart-stat-avg').textContent = `${avg} min`;
+
+      const maxVal = Math.max(peak, 60);
+
+      if (flights.length === 0) {
+        container.innerHTML = `
+          <div class="w-full h-full flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-800 rounded-xl">
+            <i data-lucide="bar-chart" class="w-8 h-8 text-slate-600 mb-2"></i>
+            <p class="text-sm font-semibold text-slate-400">Nessun dato di volo registrato</p>
+            <p class="text-xs text-slate-600 max-w-sm mt-1">Registra le tue prime missioni UAS per visualizzare il grafico temporale.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = data.map(item => {
+        const hPct = item.minutes > 0 ? Math.max(Math.round((item.minutes / maxVal) * 100), 10) : 3;
+        const timeStr = item.minutes >= 60 ? `${Math.floor(item.minutes / 60)}h ${item.minutes % 60}m` : `${item.minutes}m`;
+        const barColor = item.minutes > 0 ? "bg-gradient-to-t from-cyan-600 to-cyan-400 group-hover:from-cyan-400 group-hover:to-cyan-200" : "bg-slate-800";
+        return `
+          <div class="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer"
+               onmouseenter="showTooltip(event, '${item.label}', '${timeStr} (${item.count} voli)')"
+               onmouseleave="hideTooltip()">
+            <div class="text-[9px] font-mono-num text-cyan-400 opacity-0 group-hover:opacity-100 transition whitespace-nowrap mb-1">${timeStr}</div>
+            <div class="w-full max-w-[36px] bg-slate-900 rounded-t-lg relative flex items-end overflow-hidden border-t border-x border-slate-700/60" style="height: 100%;">
+              <div class="w-full ${barColor} transition-all rounded-t-md" style="height: ${hPct}%;"></div>
+            </div>
+            <span class="text-[10px] text-slate-400 mt-2 truncate w-full text-center">${item.label}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showTooltip(e, label, val) {
+      const tip = document.getElementById('chart-tooltip');
+      document.getElementById('tooltip-title').textContent = label;
+      document.getElementById('tooltip-value').textContent = val;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const parent = document.getElementById('chart-card').getBoundingClientRect();
+      tip.style.left = `${rect.left - parent.left + (rect.width / 2) - 40}px`;
+      tip.style.top = `${rect.top - parent.top - 34}px`;
+      tip.classList.remove('hidden');
+    }
+
+    function hideTooltip() {
+      document.getElementById('chart-tooltip').classList.add('hidden');
+    }
+
+    function renderFlights() {
+      const tbody = document.getElementById('tbody-flights');
+      const q = (document.getElementById('flight-search')?.value || '').toLowerCase();
+      const filtered = flights.filter(f => {
+        const matchDrone = (activeDrone === 'ALL') || (f.drone === activeDrone);
+        const matchQ = (f.pilot || '').toLowerCase().includes(q) || (f.drone || '').toLowerCase().includes(q) || (f.location || '').toLowerCase().includes(q);
+        return matchDrone && matchQ;
+      });
+
+      document.getElementById('badge-flights').textContent = flights.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-12 text-center">
+              <div class="flex flex-col items-center justify-center space-y-2">
+                <div class="w-12 h-12 rounded-2xl bg-slate-950 flex items-center justify-center text-slate-600 border border-slate-800">
+                  <i data-lucide="plane" class="w-6 h-6"></i>
+                </div>
+                <p class="text-sm font-semibold text-slate-300">Nessuna missione registrata</p>
+                <p class="text-xs text-slate-500 max-w-md">Il registro voli è attualmente vuoto. Clicca su "+ Nuova Missione".</p>
+                <button onclick="openModalFlight()" class="mt-2 text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Aggiungi prima missione
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(f => `
+        <tr class="hover:bg-slate-800/40 transition">
+          <td class="px-4 py-3 whitespace-nowrap">
+            <div class="font-semibold text-white">${f.date.replace('T', ' ')}</div>
+            <div class="text-[10px] font-mono-num text-cyan-400">${f.id}</div>
+          </td>
+          <td class="px-4 py-3">
+            <div class="font-medium text-slate-200 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              ${f.drone}
+            </div>
+          </td>
+          <td class="px-4 py-3">
+            <div class="text-slate-200">${f.location}</div>
+            <div class="text-[10px] text-slate-400">Quota: ${f.altitude}m AGL</div>
+          </td>
+          <td class="px-4 py-3">
+            <div class="text-slate-200 font-medium">${f.pilot}</div>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">${f.scenario}</span>
+          </td>
+          <td class="px-4 py-3 whitespace-nowrap font-mono-num font-bold text-white">${f.duration} min</td>
+          <td class="px-4 py-3">
+            <div class="text-slate-200">${f.battery || 'Pacco Base'}</div>
+            <div class="text-slate-400 text-[10px]">${f.weather || 'Standard'}</div>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <span class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold">OK</span>
+          </td>
+          <td class="px-4 py-3 text-right no-print">
+            <button onclick="deleteFlight('${f.id}')" title="Elimina volo" class="p-1 rounded text-slate-400 hover:text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          </td>
+        </tr>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function renderBatteries() {
+      const tbody = document.getElementById('tbody-batteries');
+      const q = (document.getElementById('battery-search')?.value || '').toLowerCase();
+      const filtered = batteries.filter(b => {
+        const matchDrone = (activeDrone === 'ALL') || (b.drone === activeDrone);
+        const matchQ = (b.serial || '').toLowerCase().includes(q) || (b.type || '').toLowerCase().includes(q);
+        return matchDrone && matchQ;
+      });
+
+      document.getElementById('badge-batteries').textContent = batteries.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-12 text-center">
+              <div class="flex flex-col items-center justify-center space-y-2">
+                <div class="w-12 h-12 rounded-2xl bg-slate-950 flex items-center justify-center text-slate-600 border border-slate-800">
+                  <i data-lucide="battery-charging" class="w-6 h-6"></i>
+                </div>
+                <p class="text-sm font-semibold text-slate-300">Nessuna batteria registrata</p>
+                <button onclick="openModalBattery()" class="mt-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Aggiungi prima batteria
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(b => `
+        <tr class="hover:bg-slate-800/40 transition">
+          <td class="px-4 py-3 font-mono-num font-semibold text-white">${b.serial}</td>
+          <td class="px-4 py-3 text-slate-200">
+            <div>${b.drone}</div>
+            <div class="text-[10px] text-slate-400">${b.type}</div>
+          </td>
+          <td class="px-4 py-3 whitespace-nowrap">
+            <span class="font-mono-num font-bold text-white">${b.cycles} / ${b.maxCycles}</span>
+            <div class="w-20 bg-slate-800 rounded-full h-1 mt-1">
+              <div class="bg-cyan-500 h-1 rounded-full" style="width: ${Math.min((b.cycles / b.maxCycles) * 100, 100)}%"></div>
+            </div>
+          </td>
+          <td class="px-4 py-3 font-mono-num text-emerald-400 font-bold">${b.soh}% SOH</td>
+          <td class="px-4 py-3 font-mono-num text-slate-300">&Delta; ${b.deltaV} mV</td>
+          <td class="px-4 py-3 text-slate-300">${b.lastUse || '--'}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px]">${b.status}</span>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <button onclick="addBatteryCycle('${b.id}')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold text-[10px] border border-slate-700 mr-1">+1 Ciclo</button>
+            <button onclick="deleteBattery('${b.id}')" title="Elimina batteria" class="p-1 text-slate-400 hover:text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          </td>
+        </tr>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function renderMaintenance() {
+      const tbody = document.getElementById('tbody-maint');
+      const q = (document.getElementById('maint-search')?.value || '').toLowerCase();
+      const filtered = maintenance.filter(m => {
+        const matchDrone = (activeDrone === 'ALL') || (m.drone === activeDrone);
+        const matchQ = (m.comp || '').toLowerCase().includes(q) || (m.tech || '').toLowerCase().includes(q);
+        return matchDrone && matchQ;
+      });
+
+      document.getElementById('badge-maint').textContent = maintenance.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-12 text-center">
+              <div class="flex flex-col items-center justify-center space-y-2">
+                <div class="w-12 h-12 rounded-2xl bg-slate-950 flex items-center justify-center text-slate-600 border border-slate-800">
+                  <i data-lucide="wrench" class="w-6 h-6"></i>
+                </div>
+                <p class="text-sm font-semibold text-slate-300">Nessuna manutenzione registrata</p>
+                <button onclick="openModalMaint()" class="mt-2 text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nuovo intervento
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(m => `
+        <tr class="hover:bg-slate-800/40 transition">
+          <td class="px-4 py-3 whitespace-nowrap text-white font-medium">${m.date}</td>
+          <td class="px-4 py-3"><div class="text-white font-medium">${m.drone}</div><div class="text-amber-400 text-[11px]">${m.comp}</div></td>
+          <td class="px-4 py-3"><span class="bg-slate-800 px-2 py-0.5 rounded text-slate-300">${m.type}</span></td>
+          <td class="px-4 py-3 text-slate-300">${m.tech}</td>
+          <td class="px-4 py-3 font-mono-num text-white font-bold">${m.hours}h</td>
+          <td class="px-4 py-3 text-amber-400">${m.nextDue || '--'}</td>
+          <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px]">${m.status}</span></td>
+          <td class="px-4 py-3 text-right">
+            <button onclick="deleteMaint('${m.id}')" title="Elimina intervento" class="p-1 text-slate-400 hover:text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          </td>
+        </tr>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function updateKPIs() {
+      const totalMinutes = flights.reduce((s, f) => s + (parseInt(f.duration) || 0), 0);
+      document.getElementById('kpi-total-hours').textContent = `${Math.floor(totalMinutes / 60)}h ${(totalMinutes % 60).toString().padStart(2, '0')}m`;
+      document.getElementById('kpi-total-flights').textContent = flights.length;
+      document.getElementById('kpi-flights-sub').textContent = flights.length > 0 ? "100% senza incidenti" : "Nessuna missione registrata";
+
+      document.getElementById('kpi-battery-count').textContent = `${batteries.length} pacchi`;
+      if (batteries.length > 0) {
+        const avgSoh = Math.round(batteries.reduce((s, b) => s + (parseInt(b.soh) || 100), 0) / batteries.length);
+        document.getElementById('kpi-battery-soh').textContent = `SOH medio: ${avgSoh}%`;
+      } else {
+        document.getElementById('kpi-battery-soh').textContent = `SOH medio: --`;
+      }
+
+      document.getElementById('kpi-maint-count').textContent = maintenance.length;
+      document.getElementById('kpi-maint-sub').textContent = maintenance.length > 0 ? "Stato Flotta: OK" : "Nessun intervento attivo";
+    }
+
+    function triggerPrintENAC() {
+      document.getElementById('print-date').textContent = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      window.print();
+    }
+
+    function triggerPrintQRBadge() {
+      window.print();
+    }
+
+    function addBatteryCycle(id) {
+      const b = batteries.find(x => x.id === id);
+      if (b) {
+        b.cycles = (parseInt(b.cycles) || 0) + 1;
+        b.lastUse = new Date().toISOString().slice(0, 10);
+        localStorage.setItem(K_BATTERIES, JSON.stringify(batteries));
+        renderBatteries();
+        updateKPIs();
+        showToast(`+1 Ciclo registrato per batteria ${b.serial}`);
+      }
+    }
+
+    function deleteFlight(id) {
+      if (!confirm("Sei sicuro di voler eliminare questa missione dal registro?")) return;
+      flights = flights.filter(f => f.id !== id);
+      localStorage.setItem(K_FLIGHTS, JSON.stringify(flights));
+      renderFlights();
+      updateKPIs();
+      renderChart();
+      showToast("Missione eliminata");
+    }
+
+    function deleteBattery(id) {
+      if (!confirm("Sei sicuro di voler rimuovere questo pacco batteria?")) return;
+      batteries = batteries.filter(b => b.id !== id);
+      localStorage.setItem(K_BATTERIES, JSON.stringify(batteries));
+      renderBatteries();
+      updateKPIs();
+      showToast("Batteria rimossa dal registro");
+    }
+
+    function deleteMaint(id) {
+      if (!confirm("Sei sicuro di voler eliminare questo intervento tecnico?")) return;
+      maintenance = maintenance.filter(m => m.id !== id);
+      localStorage.setItem(K_MAINT, JSON.stringify(maintenance));
+      renderMaintenance();
+      updateKPIs();
+      showToast("Intervento eliminato");
+    }
+
+    function loadDemoData() {
+      flights = JSON.parse(JSON.stringify(DEMO_FLIGHTS));
+      batteries = JSON.parse(JSON.stringify(DEMO_BATTERIES));
+      maintenance = JSON.parse(JSON.stringify(DEMO_MAINT));
+
+      localStorage.setItem(K_FLIGHTS, JSON.stringify(flights));
+      localStorage.setItem(K_BATTERIES, JSON.stringify(batteries));
+      localStorage.setItem(K_MAINT, JSON.stringify(maintenance));
+
+      renderFlights();
+      renderBatteries();
+      renderMaintenance();
+      updateKPIs();
+      renderChart();
+      showToast("Dati demo d'esempio caricati con successo!");
+    }
+
+    function confirmResetDatabase() {
+      if (confirm("Attenzione: Vuoi svuotare completamente il database? Tutti i dati verranno azzerati.")) {
+        flights = [];
+        batteries = [];
+        maintenance = [];
+        localStorage.removeItem(K_FLIGHTS);
+        localStorage.removeItem(K_BATTERIES);
+        localStorage.removeItem(K_MAINT);
+
+        renderFlights();
+        renderBatteries();
+        renderMaintenance();
+        updateKPIs();
+        renderChart();
+        showToast("Database azzerato!");
+      }
+    }
+
+    function saveChecklistState() {
+      const state = {
+        c1: document.getElementById('chk-1').checked,
+        c2: document.getElementById('chk-2').checked,
+        c3: document.getElementById('chk-3').checked,
+        c4: document.getElementById('chk-4').checked
+      };
+      localStorage.setItem(K_CHECKLIST, JSON.stringify(state));
+    }
+
+    function loadChecklistState() {
+      const saved = JSON.parse(localStorage.getItem(K_CHECKLIST) || '{}');
+      if (document.getElementById('chk-1')) document.getElementById('chk-1').checked = !!saved.c1;
+      if (document.getElementById('chk-2')) document.getElementById('chk-2').checked = !!saved.c2;
+      if (document.getElementById('chk-3')) document.getElementById('chk-3').checked = !!saved.c3;
+      if (document.getElementById('chk-4')) document.getElementById('chk-4').checked = !!saved.c4;
+    }
+
+    function resetChecklist() {
+      ['chk-1', 'chk-2', 'chk-3', 'chk-4'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.checked = false;
+      });
+      saveChecklistState();
+      showToast("Checklist pre-volo azzerata");
+    }
+
+    function exportJSON() {
+      const data = { app: "DroneLog Pro", version: "2.8", flights, batteries, maintenance };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `DroneLog_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Backup JSON esportato con successo");
+    }
+
+    function exportCSV() {
+      let csv = "ID_VOLO;DATA_ORA;DRONE;PILOTA;SCENARIO;LUOGO;DURATA_MIN;QUOTA_AGL_M;BATTERIA;METEO;ESITO\n";
+      flights.forEach(f => {
+        csv += `"${f.id}";"${f.date}";"${f.drone}";"${f.pilot}";"${f.scenario}";"${f.location}";"${f.duration}";"${f.altitude}";"${f.battery}";"${f.weather}";"${f.status}"\n`;
+      });
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `DroneLog_Missioni_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("CSV Registro Voli generato");
+    }
+
+    function importJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          if (Array.isArray(parsed.flights)) flights = parsed.flights;
+          if (Array.isArray(parsed.batteries)) batteries = parsed.batteries;
+          if (Array.isArray(parsed.maintenance)) maintenance = parsed.maintenance;
+
+          localStorage.setItem(K_FLIGHTS, JSON.stringify(flights));
+          localStorage.setItem(K_BATTERIES, JSON.stringify(batteries));
+          localStorage.setItem(K_MAINT, JSON.stringify(maintenance));
+
+          renderFlights();
+          renderBatteries();
+          renderMaintenance();
+          updateKPIs();
+          renderChart();
+          showToast("Dati importati con successo!");
+        } catch (err) {
+          alert("File JSON non valido o corrotto!");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    }
+
+    function openModalFlight() {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('f-date').value = now.toISOString().slice(0, 16);
+      document.getElementById('modal-flight').classList.remove('hidden');
+    }
+    function closeModalFlight() { document.getElementById('modal-flight').classList.add('hidden'); }
+
+    function openModalBattery() { document.getElementById('modal-battery').classList.remove('hidden'); }
+    function closeModalBattery() { document.getElementById('modal-battery').classList.add('hidden'); }
+
+    function openModalMaint() {
+      document.getElementById('m-date').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('modal-maint').classList.remove('hidden');
+    }
+    function closeModalMaint() { document.getElementById('modal-maint').classList.add('hidden'); }
+
+    function openEditPilotModal() { document.getElementById('modal-pilot-edit').classList.remove('hidden'); }
+    function closeEditPilotModal() { document.getElementById('modal-pilot-edit').classList.add('hidden'); }
+
+    function saveFlight(e) {
+      e.preventDefault();
+      const n = {
+        id: `FL-${new Date().getFullYear()}-${(flights.length + 1).toString().padStart(3, '0')}`,
+        date: document.getElementById('f-date').value,
+        drone: document.getElementById('f-drone').value,
+        pilot: document.getElementById('f-pilot').value,
+        scenario: document.getElementById('f-scenario').value,
+        location: document.getElementById('f-location').value,
+        duration: parseInt(document.getElementById('f-duration').value) || 20,
+        altitude: parseInt(document.getElementById('f-altitude').value) || 45,
+        battery: document.getElementById('f-battery').value || 'Standard',
+        weather: document.getElementById('f-weather').value || 'Sereno',
+        status: "Completata"
+      };
+      flights.unshift(n);
+      localStorage.setItem(K_FLIGHTS, JSON.stringify(flights));
+      closeModalFlight();
+      renderFlights();
+      updateKPIs();
+      renderChart();
+      showToast("Nuova missione salvata con successo!");
+    }
+
+    function saveBattery(e) {
+      e.preventDefault();
+      const b = {
+        id: `BAT-${(batteries.length + 1).toString().padStart(2, '0')}`,
+        serial: document.getElementById('b-serial').value,
+        type: document.getElementById('b-type').value,
+        drone: document.getElementById('b-drone').value,
+        cycles: parseInt(document.getElementById('b-cycles').value) || 0,
+        maxCycles: parseInt(document.getElementById('b-max-cycles').value) || 200,
+        soh: parseInt(document.getElementById('b-soh').value) || 100,
+        deltaV: parseInt(document.getElementById('b-delta').value) || 5,
+        lastUse: new Date().toISOString().slice(0, 10),
+        status: document.getElementById('b-status').value
+      };
+      batteries.push(b);
+      localStorage.setItem(K_BATTERIES, JSON.stringify(batteries));
+      closeModalBattery();
+      renderBatteries();
+      updateKPIs();
+      showToast("Batteria aggiunta al registro!");
+    }
+
+    function saveMaint(e) {
+      e.preventDefault();
+      const m = {
+        id: `MN-${(maintenance.length + 1).toString().padStart(3, '0')}`,
+        date: document.getElementById('m-date').value,
+        drone: document.getElementById('m-drone').value,
+        comp: document.getElementById('m-comp').value,
+        type: document.getElementById('m-type').value,
+        tech: document.getElementById('m-tech').value,
+        hours: parseFloat(document.getElementById('m-hours').value) || 0,
+        nextDue: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        status: "Completato"
+      };
+      maintenance.unshift(m);
+      localStorage.setItem(K_MAINT, JSON.stringify(maintenance));
+      closeModalMaint();
+      renderMaintenance();
+      updateKPIs();
+      showToast("Intervento manutenzione registrato!");
+    }
+
+    function savePilotAnagrafica(e) {
+      e.preventDefault();
+      const opName = document.getElementById('edit-op-name').value;
+      const opCode = document.getElementById('edit-op-code').value;
+      const opIns = document.getElementById('edit-op-ins').value;
+      const opMax = document.getElementById('edit-op-max').value;
+      const pilotName = document.getElementById('edit-pilot-name').value;
+      const pilotCode = document.getElementById('edit-pilot-code').value;
+      const pilotCats = document.getElementById('edit-pilot-cats').value;
+      const pilotMed = document.getElementById('edit-pilot-med').value;
+
+      document.getElementById('print-op-name').textContent = opName;
+      document.getElementById('print-op-code').textContent = opCode;
+      document.getElementById('print-pilot-name').textContent = pilotName;
+      document.getElementById('print-pilot-code').textContent = pilotCode;
+
+      document.getElementById('badge-qr-code-label').textContent = opCode;
+      document.getElementById('card-op-name').textContent = opName;
+      document.getElementById('card-op-code').textContent = opCode;
+      document.getElementById('card-op-insurance').textContent = opIns;
+      document.getElementById('card-op-max').textContent = opMax;
+
+      document.getElementById('card-pilot-name').textContent = pilotName;
+      document.getElementById('card-pilot-code').textContent = pilotCode;
+      document.getElementById('card-pilot-cats').textContent = pilotCats;
+      document.getElementById('card-pilot-med').textContent = pilotMed;
+
+      closeEditPilotModal();
+      showToast("Anagrafica aggiornata con successo!");
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+
+</html>
