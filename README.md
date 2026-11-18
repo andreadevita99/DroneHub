@@ -3,6 +3,7 @@
 **DroneHubLog Pro** è una web application single-file, leggera e professionale progettata per piloti e operatori UAS (SAPR).
 
 Consente la gestione completa del registro voli conforme alle normative europee **EASA / ENAC** (Regolamento UE 2019/947), il monitoraggio dello stato di salute delle batterie DJI, la manutenzione della flotta e la generazione di report PDF ufficiali.
+![enter image description here](https://github.com/andreadevita99/DroneHub/blob/main/mockup.png)
 
 ---
 
